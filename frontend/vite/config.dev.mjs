@@ -22,6 +22,11 @@ export default defineConfig(({ mode }) => {
         server: {
             port: 8080,
             proxy: {
+                '/quiz': {
+                    target: backendTarget,
+                    changeOrigin: true,
+                    secure: false,
+                },
                 // Socket.IO (HTTP long-polling + WebSocket upgrade)
                 '/socket.io': {
                     target: backendTarget,

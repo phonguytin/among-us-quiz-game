@@ -14,6 +14,7 @@ export function handleImposter(scene) {
 
     // Kill button click handler
     const handleKill = () => {
+        if (scene.taskActive || scene.meetingActive || !scene.player?.active || !scene.player.alive) return;
         const victim = scene.closest && scene.closest.player;
         if (!victim) return;
 

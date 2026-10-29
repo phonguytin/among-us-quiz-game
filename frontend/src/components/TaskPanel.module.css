@@ -1,0 +1,27 @@
+.backdrop { position: fixed; inset: 0; z-index: 2200; display: grid; place-items: center; padding: 24px; background: #000b; }
+.panel { width: min(800px, 100%); max-height: 88dvh; display: flex; flex-direction: column; border: 2px solid #97a7b1; border-radius: 16px; background: #050505; color: #fff; box-shadow: 0 18px 70px #000c; font-family: Arial, sans-serif; }
+.header { display: flex; align-items: center; gap: 18px; padding: 20px 24px; border-bottom: 1px solid #38444c; flex-shrink: 0; }
+.header h2 { margin: 0; font-size: 28px; font-weight: 700; }
+.header p { margin: 4px 0 0; color: #b7c5cd; }
+.close { width: 44px; height: 44px; flex-shrink: 0; border: 2px solid #fff; border-radius: 50%; color: #fff; background: #111; font-size: 32px; line-height: 1; cursor: pointer; }
+.demo { margin-left: auto; color: #f6d969; border: 1px solid #776629; border-radius: 6px; padding: 6px 10px; font-size: 12px; white-space: nowrap; }
+.content { padding: 24px; overflow-y: auto; overscroll-behavior: contain; }
+.tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+.tabs button, .content > button { border: 1px solid #6c7f8a; border-radius: 6px; padding: 8px 14px; color: #fff; background: #19232a; cursor: pointer; }
+.tabs button[aria-current] { border-color: #f6d969; color: #f6d969; }
+.counter { color: #afbdc5; font-size: 14px; margin: 0 0 12px; }
+.prompt { font-size: 22px; line-height: 1.5; margin: 0 0 24px; overflow-wrap: anywhere; white-space: pre-wrap; }
+.answers { border: 0; padding: 0; margin: 0; display: grid; gap: 12px; }
+.option { display: flex; align-items: center; gap: 12px; padding: 16px; border: 1px solid #5d6d77; border-radius: 8px; background: #152027; cursor: pointer; overflow-wrap: anywhere; }
+.option.selected { border-color: #f6d969; background: #302b16; }
+.option input { width: 18px; height: 18px; flex-shrink: 0; accent-color: #f6d969; }
+.textAnswer { display: grid; gap: 10px; }
+.textAnswer input { width: 100%; box-sizing: border-box; border: 1px solid #93a4af; border-radius: 8px; padding: 14px; background: #162027; color: #fff; font: inherit; }
+.footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 24px; }
+.feedback { color: #e5e8ea; margin: 0; }
+.submit { padding: 12px 26px; border: 1px solid #f6d969; border-radius: 8px; background: #f6d969; color: #111; font: inherit; font-weight: bold; cursor: pointer; }
+.error { color: #ff9d9d; margin: 16px 0 0; }
+.panel button:disabled { opacity: .5; cursor: default; }
+.panel :focus-visible { outline: 3px solid #6de5ff; outline-offset: 3px; }
+.srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+@media (max-width: 560px) { .backdrop { padding: 12px; } .header, .content { padding: 16px; } .header { gap: 10px; } .header h2 { font-size: 22px; } .demo { white-space: normal; max-width: 80px; } .prompt { font-size: 18px; } }

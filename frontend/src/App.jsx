@@ -9,6 +9,7 @@ import EndGame from "./components/EndGame.jsx";
 import {EventBus} from './game/EventBus';
 import RoleIndicator from "./components/RoleIndicator.jsx";
 import { ToastContainer } from "./components/Toast.jsx";
+import TaskInteraction from './components/TaskInteraction.jsx';
 const PAGES = {MENU: 'lobby', WAITING: 'waiting', GAME: 'game', GAMEEND: 'gameend'};
 
 function App() {
@@ -200,6 +201,7 @@ function App() {
       {(currentPage === PAGES.GAME || currentPage === PAGES.WAITING) && (
         <div className={styles.gameContainer}>
           <PhaserGame/>
+          {currentPage === PAGES.GAME && <TaskInteraction />}
           {
             currentPage === PAGES.WAITING && (
               isLocalPlayerHost

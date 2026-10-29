@@ -5,6 +5,7 @@ import { setPlayerColor } from "../utils/playerFactory.js";
 import {EventBus} from "../EventBus.js";
 import { handleImposter, handleImposterMovement } from "../utils/imposter.js";
 import { setupVisionSystem, disableVisionSystem, updateVisionSystem, enableVisionSystem} from "../utils/vision.js";
+import { TaskController } from '../utils/TaskController.js';
 
 export class Game extends BaseGameScene {
 
@@ -76,6 +77,8 @@ export class Game extends BaseGameScene {
     create() {
         // stored promise for imposter role assignment
         const prom1 = this.createCommon();
+        this.meetingActive = false;
+        this.taskController = new TaskController(this);
         this.socket = socketService.getSocket();
         this.input.on('pointerdown', (pointer) => {
             console.log(
@@ -98,6 +101,7 @@ export class Game extends BaseGameScene {
 
         // Wait for both player setup and imposter role assignment before initializing imposter mechanics
         Promise.all([prom1, this.imposterProm]).then((results) => {
+            if (!this.scene.isActive() || !this.player?.active) return;
             console.log("Creating imposter elements", prom1, this.imposterProm, results);
             this.imposter = results[1];
             handleImposter(this);
@@ -114,6 +118,7 @@ export class Game extends BaseGameScene {
      */
     update(time, delta) {
         if (!this.player) return;
+        this.taskController?.update();
 
         this.handleMovement();
         handleImposterMovement(this);
@@ -123,7 +128,8 @@ export class Game extends BaseGameScene {
             updateVisionSystem(this);
         }
 
-        if (this.physics.overlap(this.player, this.meetingZone)) {
+        if (this.meetingZone && !this.meetingActive && !this.taskActive && this.player.active && this.player.alive
+            && this.physics.overlap(this.player, this.meetingZone)) {
             if (!this.isInMeetingZone) {
                 this.isInMeetingZone = true;
                 this.meetingBtn.visible = true;
@@ -138,6 +144,8 @@ export class Game extends BaseGameScene {
      * Clean up scene resources and event listeners
      */
     shutdown() {
+        this.taskController?.destroy();
+        this.taskController = null;
         if (this.socket) {
             if (this.onPlayerKilled) {
                 this.socket.off('player:killed', this.onPlayerKilled);
@@ -152,7 +160,7 @@ export class Game extends BaseGameScene {
                 this.onMeetingEnded = null;
             }
             if (this.onGameEnd) {
-                this.socket.off('game:end', this.onGameEnd);
+                this.socket.off('game:ended', this.onGameEnd);
                 this.onGameEnd = null;
             }
         }
@@ -164,11 +172,12 @@ export class Game extends BaseGameScene {
      * Create death animation for killed players
      */
     createAnimations() {
+        if (this.anims.exists('deathAnim')) return;
         this.anims.create({
             key: 'deathAnim',
             frames: this.anims.generateFrameNames('death', {
                 prefix: 'Dead',
-                start: 0,
+                start: 1,
                 end: 42,
                 zeroPad: 4
             }),
@@ -192,6 +201,11 @@ export class Game extends BaseGameScene {
             const localId = this.playerObj?.id ?? this.player?.id;
 
             const killedPlayer = (targetId === String(localId)) ? this.player : this.players[targetId];
+            if (this.taskController.deaths.has(targetId)) return;
+            this.taskController.deaths.add(targetId);
+            if (this.room.players[targetId]) this.room.players[targetId].isAlive = false;
+            if (targetId === String(localId)) this.taskController.reset();
+            const bodyEpoch = this.taskController.epoch;
 
             // Move the killer sprite so all clients see imposter at the body
             const killerId = data.killerId ? String(data.killerId) : null;
@@ -203,25 +217,36 @@ export class Game extends BaseGameScene {
                 }
             }
 
-            killedPlayer.alive = false;
-            if (killedPlayer.destroy) killedPlayer.destroy();
+            if (killedPlayer) {
+                killedPlayer.alive = false;
+                if (killedPlayer.destroy) killedPlayer.destroy();
+            }
+            this.taskController.update(true);
 
-            const deathAnim = this.add.sprite(data.x, data.y, 'death', 'Dead0001.png')
+            const deathAnim = this.add.sprite(data.x, data.y, 'death', 'Dead0001')
                 .setScale(0.125)
                 .setDepth(600);
+            this.worldContainer.add(deathAnim);
             setPlayerColor(this, deathAnim, data.color);
-            deathAnim.anims.play('deathAnim');
-            deathAnim.on('animationcomplete', () => {
-                this.add.sprite(deathAnim.x, deathAnim.y, 'deadBody')
+            deathAnim.once('animationcomplete', () => {
+                if (!this.taskController || this.taskController.epoch !== bodyEpoch) {
+                    deathAnim.destroy();
+                    return;
+                }
+                const body = this.add.sprite(deathAnim.x, deathAnim.y, 'deadBody')
                     .setScale(0.125)
                     .setDepth(500);
+                this.worldContainer.add(body);
+                this.taskController.addBody(targetId, body);
                 deathAnim.destroy();
             });
+            deathAnim.anims.play('deathAnim');
         };
 
         this.onMeetingStarted = (data) => {
             console.log("Meeting started event received:", data);
             this.meetingActive = true;
+            this.taskController.reset({ clearBodies: true });
             this.physics.pause(); // Pause physics
             disableVisionSystem(this);
             console.log("Meeting started, players teleported to spawn.", data, this.room.players);
@@ -246,6 +271,7 @@ export class Game extends BaseGameScene {
             });
         };
         this.onGameEnd = (data) => {
+            this.taskController.reset({ clearBodies: true });
             console.log("game end event received:", data);
             EventBus.emit("game:ended", data);
             if (this.scene && typeof this.scene.isActive === 'function' && this.scene.isActive('Game')) {
@@ -264,6 +290,7 @@ export class Game extends BaseGameScene {
      * Start a meeting (called when M key is pressed)
      */
     startMeeting() {
+        if (this.taskActive || this.meetingActive || !this.player?.alive) return;
         if (!this.socket || !this.playerObj || !this.room) return;
 
         console.log('Starting meeting...');

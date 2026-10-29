@@ -1,0 +1,7 @@
+.actions { position: absolute; bottom: 22px; right: 22px; z-index: 1100; display: flex; gap: 12px; }
+.actions button { width: 94px; min-height: 108px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 2px solid #fff; border-radius: 12px; background: #0a0d10e6; color: #fff; cursor: pointer; font-size: 18px; font-weight: bold; }
+.actions img { height: 66px; width: 66px; object-fit: contain; }
+.actions button:hover { border-color: #f6d969; }
+.actions button:focus-visible { outline: 3px solid #6de5ff; outline-offset: 3px; }
+.reportMessage { position: absolute; bottom: 150px; right: 22px; z-index: 1100; background: #10251d; border: 1px solid #75cfa4; padding: 12px 18px; border-radius: 8px; color: #fff; }
+@media (max-width: 560px) { .actions { bottom: 12px; right: 12px; } .actions button { width: 72px; min-height: 88px; font-size: 15px; } .actions img { width: 50px; height: 50px; } }

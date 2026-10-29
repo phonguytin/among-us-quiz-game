@@ -301,6 +301,7 @@ export class BaseGameScene extends Scene {
      * Common create logic for all game scenes
      */
     async createCommon() {
+        this.events.once('shutdown', this.shutdown, this);
         this.ui = this.add.container(0, 0).setScrollFactor(0).setDepth(1000);
         this.worldContainer = this.add.container(0, 0).setDepth(0);
         this.players = {};
@@ -329,7 +330,7 @@ export class BaseGameScene extends Scene {
         if (!this.player || !this.player.body) return;
 
         // Disable movement during meeting
-        if (this.meetingActive) {
+        if (this.meetingActive || this.taskActive) {
             this.player.body.setVelocity(0, 0);
             if (this.player.anims.isPlaying) {
                 this.player.anims.stop();
