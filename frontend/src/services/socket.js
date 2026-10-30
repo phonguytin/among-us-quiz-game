@@ -1,5 +1,6 @@
 import { io } from "socket.io-client";
 import { getSocketUrl } from '../utils/urls.js';
+import { getPlayerId } from './playerSession.js';
 
 // undefined → connect to page origin (Vite proxies /socket.io in dev)
 const SOCKET_URL = getSocketUrl();
@@ -34,7 +35,7 @@ export const socketService = {
 
     disconnect: (playerId) => {
         if (socket.connected) {
-            const id = playerId || sessionStorage.getItem("playerId");
+            const id = playerId || getPlayerId();
             if (id) {
                 socket.emit("player:disconnect", { playerId: id });
                 console.log("Emitted player:disconnect for:", id);

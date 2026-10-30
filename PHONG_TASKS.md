@@ -30,7 +30,7 @@ Truy cập `http://localhost:8080`. Backend mặc định chạy cổng 3000; `.
 
 ## Tự kiểm tra ba chức năng
 
-1. Dùng ít nhất hai phiên trình duyệt độc lập, chẳng hạn cửa sổ thường và cửa sổ ẩn danh. Mỗi phiên đăng ký một nhân vật, vào cùng phòng. Host bấm Start Game. Tránh nhân bản tab đã đăng nhập vì có thể sao chép cùng `sessionStorage.playerId`.
+1. Mở ít nhất hai tab tại `http://localhost:8080`; có thể dùng Duplicate tab. Mỗi trang tự tạo ID nhân vật riêng, kể cả khi trình duyệt sao chép `sessionStorage` từ tab gốc. Đặt tên khác nhau cho từng tab, ví dụ Phong1 đến Phong5, và chọn các màu khác nhau hoặc bỏ chọn màu. Chỉ tab đầu bấm Create Room; các tab còn lại bấm vào cùng mã phòng trong danh sách. Chờ tất cả vào phòng rồi host mới bấm Start Game, vì phòng đã bắt đầu sẽ không nhận người mới. Tải lại trang bắt đầu một phiên nhân vật mới.
 2. Dùng W/A/S/D di chuyển. Đi từ vị trí xuất phát về phía bên phải Cafeteria, đến gần ô nhỏ có viền vàng tại tọa độ map `(672, 153)`. Trong phạm vi 42 đơn vị sẽ thấy Solve; đi xa hơn thì nút ẩn. Điểm mẫu thứ hai ở Weapons `(750, 116)`.
 3. Bấm Solve: khung nền đen, chữ trắng “nhiệm vụ”, nút × bên trái, nhãn “Dữ liệu mẫu”. Nhân vật dừng di chuyển, nhưng trận đấu của các người chơi khác vẫn tiếp tục. Bấm × hoặc Escape để đóng và di chuyển lại.
 4. Câu 1 là trắc nghiệm: thử Submit khi chưa chọn, thử chọn Imposter để nhận kết quả sai, rồi chọn Crewmate để nhận kết quả đúng. Câu 2 là điền khuyết, nhập `5` rồi Submit. Câu đã đúng được đánh dấu ✓, khóa gửi lặp trong lần mở khung đó. Đóng và mở lại sẽ bắt đầu lại bài mẫu; chưa ghi tiến độ nhiệm vụ lên backend hoặc thay đổi điều kiện thắng.

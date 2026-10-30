@@ -10,6 +10,7 @@ import {EventBus} from './game/EventBus';
 import RoleIndicator from "./components/RoleIndicator.jsx";
 import { ToastContainer } from "./components/Toast.jsx";
 import TaskInteraction from './components/TaskInteraction.jsx';
+import { getPlayerId } from './services/playerSession.js';
 const PAGES = {MENU: 'lobby', WAITING: 'waiting', GAME: 'game', GAMEEND: 'gameend'};
 
 function App() {
@@ -137,7 +138,7 @@ function App() {
     socket.emit('game:start', { roomId });
   }
   const handleBackToMenu = () => {
-    const playerId = sessionStorage.getItem('playerId');
+    const playerId = getPlayerId();
     if (socket && playerId) socket.emit('room:leave', {playerId});
     setRoomId(null);
     setCurrentPage(PAGES.MENU);

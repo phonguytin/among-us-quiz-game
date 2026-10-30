@@ -3,6 +3,7 @@ import socketService from '../services/socket';
 import styles from './room.module.css';
 import { apiUrl } from '../utils/urls.js';
 import {Button} from '../components/Button.jsx';
+import { getPlayerId } from '../services/playerSession.js';
 
 /**
  * @param {{onJoinGame: (roomId: string) => void}} props
@@ -18,7 +19,7 @@ export function Menu({onJoinGame}) {
   const socket = socketService.getSocket();
 
   useEffect(() => {
-    const savedName = localStorage.getItem('playerName');
+    const savedName = sessionStorage.getItem('playerName');
     if (savedName) {
       setPlayerName(savedName);
     }
@@ -103,7 +104,7 @@ export function Menu({onJoinGame}) {
     }
     const playerId = getPlayerId();
 
-    localStorage.setItem('playerName', playerName.trim());
+    sessionStorage.setItem('playerName', playerName.trim());
 
     // Use selected color or random color if none selected
     const playerColor = selectedColor || getRandomColor();
@@ -155,11 +156,11 @@ export function Menu({onJoinGame}) {
           const taken_colors = Object.values(data.players).map((p) => p.color);
           const taken_names = Object.values(data.players).map((p) => p.name);
           if (taken_names.includes(playerName)) {
-            setError('Name already taken in this room');
+            setError('Tên đã có trong phòng. Mỗi tab cần một tên khác nhau, ví dụ Phong1, Phong2.');
             return;
           }
           if (selectedColor && taken_colors.includes(selectedColor)) {
-            setError('Color already taken in this room');
+            setError('Màu đã có trong phòng. Hãy bấm Back và chọn màu khác hoặc bỏ chọn để dùng màu ngẫu nhiên.');
             return;
           }
         }
@@ -269,23 +270,6 @@ function generateRoomId() {
   return result;
 }
 
-function generateUserId() {
-  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let result = '';
-  for (let i = 0; i < 16; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
-}
-const getPlayerId = () => {
-  const playerId = sessionStorage.getItem('playerId');
-  if (!playerId) {
-    const id = generateUserId();
-    sessionStorage.setItem('playerId', id);
-    return id;
-  }
-  return playerId;
-};
 /**
  * Available Among Us colors
  */

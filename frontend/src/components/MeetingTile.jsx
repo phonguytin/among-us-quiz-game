@@ -1,5 +1,6 @@
 import {useState,useEffect} from "react";
 import styles from './meetingTile.module.css';
+import { getPlayerId } from '../services/playerSession.js';
 
 // Public assets should be referenced by URL paths (served from /assets/...)
 const playerIcon = '/assets/meeting/pfp.png';
@@ -7,7 +8,7 @@ const voteIcon = '/assets/meeting/voted.png';
 const ivotedIcon = '/assets/meeting/ivoted.png';
 const cancelIcon = '/assets/meeting/cancel.png';
 const confirmIcon = '/assets/meeting/confirm.png';
-const localPlayerId = sessionStorage.getItem('playerId');
+const localPlayerId = getPlayerId();
 // player: {id, name, voted, color}
 export default function MeetingTile({player, votes, VoteCallBack}) {
   const [selected, setSelected] = useState(false);

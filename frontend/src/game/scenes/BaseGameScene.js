@@ -3,6 +3,7 @@ import { socketService } from '../../services/socket.js';
 import { apiUrl } from '../../utils/urls.js';
 import { EventBus } from '../EventBus';
 import { createPlayer } from '../utils/playerFactory.js';
+import { getPlayerId } from '../../services/playerSession.js';
 
 /**
  * Base class for shared logic of player management, movement, and socket events
@@ -169,7 +170,7 @@ export class BaseGameScene extends Scene {
      * Fetch room data and setup players
      */
     async fetchAndSetupPlayers() {
-        const playerId = sessionStorage.getItem("playerId");
+        const playerId = getPlayerId();
         const socket = socketService.getSocket();
 
         console.log("Fetching room data for playerId:", playerId, "socket id:", socket?.id);
