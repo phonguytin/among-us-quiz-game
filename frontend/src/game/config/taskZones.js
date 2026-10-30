@@ -5,4 +5,4 @@ export const TASK_ZONES = [
   { id: 'weapons-terminal', label: 'Weapons', x: 750, y: 116, radius: 42, width: 16, height: 20 },
 ];
 
-export const REPORT_RADIUS = 60;
+export { REPORT_RANGE as REPORT_RADIUS } from '../../../../shared/gameRules.mjs';

@@ -1,9 +1,11 @@
 import {PlayersManager} from "./players.manager.js";
+import { initializeActions } from './actions.manager.js';
 
 /**
  * @type {{[key: string]: import('../types/room.type.js').GameRoom}}
  */
 const rooms = {"1" : {id: "1", started: false, imposter: null, host: {id: "host1", name: "Host One", roomId: "1", state: {x: 0, y: 0, d: 'left'}, color: "red", isImposter: false, isAlive: true}, players: {}, currentMeeting: null}};
+const meetingTimeouts = new Map();
 
 export const RoomsManager = {
     players : {
@@ -27,6 +29,8 @@ export const RoomsManager = {
                 delete rooms[roomId].players[player.id];
                 const remainingPlayers = Object.values(rooms[roomId].players);
                 if (remainingPlayers.length < 1) {
+                    clearTimeout(meetingTimeouts.get(roomId));
+                    meetingTimeouts.delete(roomId);
                     delete rooms[roomId];
                     return {deleted: true};
                 }
@@ -45,8 +49,9 @@ export const RoomsManager = {
     },
     meetings: {
         create(roomId, callerId, endFunc) {
-          rooms[roomId].currentMeeting = {isActive: true, callerId, votes: {}, endTime: Date.now() + 10000};
-          this.endTimeout = setTimeout(() => {endFunc({ roomId })}, 1000*60);
+          const room = rooms[roomId];
+          room.currentMeeting = {isActive: true, callerId, votes: {}, endTime: Date.now() + 60000};
+          meetingTimeouts.set(roomId, setTimeout(() => {endFunc({ roomId })}, 1000*60));
           // console.log("Meeting created in room:", roomId, rooms[roomId].currentMeeting, rooms[roomId]); // DEBUG LOG
         },
         vote(roomId, callerId, votedForId) {
@@ -63,10 +68,8 @@ export const RoomsManager = {
             const meeting = rooms[roomId].currentMeeting;
             if (!meeting.isActive) return null;
 
-            if (this.endTimeout) {
-                clearTimeout(this.endTimeout);
-                this.endTimeout = null;
-            }
+            clearTimeout(meetingTimeouts.get(roomId));
+            meetingTimeouts.delete(roomId);
 
             meeting.isActive = false;
             const votes = meeting.votes || {};
@@ -125,6 +128,7 @@ export const RoomsManager = {
     startGame(roomId) {
         if (!rooms[roomId]) return;
         rooms[roomId].started = true;
+        initializeActions(rooms[roomId]);
         const players = Object.values(rooms[roomId].players);
 
         if (!players || players.length === 0) {
@@ -166,14 +170,17 @@ export const RoomsManager = {
         console.log(`Alive Imposters: ${aliveImposters.length}, Alive Crewmates: ${aliveCrewmates.length}`);
 
         if (aliveImposters.length >= aliveCrewmates.length && aliveCrewmates.length > 0) {
+            room.ended = true;
             return true;
         }
 
         if (aliveCrewmates.length === 0) {
+            room.ended = true;
             return true;
         }
 
         if (aliveImposters.length === 0) {
+            room.ended = true;
             return false;
         }
 

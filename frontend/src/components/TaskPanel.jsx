@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import styles from './TaskPanel.module.css';
+import { nextUnsolvedQuestion } from '../utils/questionProgress.js';
 
-export default function TaskPanel({ task, service, onClose }) {
+export default function TaskPanel({ task, service, onClose, onComplete }) {
   const [questions, setQuestions] = useState([]);
   const [index, setIndex] = useState(0);
   const [answer, setAnswer] = useState('');
@@ -60,7 +61,13 @@ export default function TaskPanel({ task, service, onClose }) {
       });
       if (signal.aborted) return;
       setResult(response.result);
-      if (response.result) setSolved(previous => new Set([...previous, question.id]));
+      if (response.result) {
+        const completed = new Set([...solved, question.id]);
+        setSolved(completed);
+        const next = nextUnsolvedQuestion(questions, completed, index);
+        if (next === -1) (onComplete || onClose)();
+        else changeQuestion(next);
+      }
     } catch (err) {
       if (!signal.aborted) setError(err.message);
     } finally {
@@ -125,7 +132,6 @@ export default function TaskPanel({ task, service, onClose }) {
                   {submitting ? 'Đang gửi…' : 'Submit'}
                 </button>
               </div>
-              {solved.size === questions.length && <p role="status">Bạn đã trả lời đúng tất cả câu hỏi. Có thể đóng nhiệm vụ.</p>}
             </form>
           </>}
           {error && <p className={styles.error} role="alert">{error}</p>}

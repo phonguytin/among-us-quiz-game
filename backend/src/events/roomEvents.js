@@ -11,6 +11,7 @@ export const registerRoomEvents = (io, socket) => {
     const playerRegister = (data) => {
         console.log("Player register received:", data);
         PlayersManager.createPlayer(data.id, data.name, data.color);
+        socket.data.playerId = data.id;
         socket.emit('player:registered', {playerId: data.id});
     }
     const playerUnregister = (data) => {
@@ -44,7 +45,10 @@ export const registerRoomEvents = (io, socket) => {
         }
 
         // Track socket to player mapping for cleanup on unexpected disconnect
-        socketToPlayerId[socket.id] = data.playerId;
+        if (data.playerId !== socket.data.playerId) {
+            socket.emit('room:join:error', { message: 'Nhân vật không hợp lệ.' });
+            return;
+        }
 
         let player = PlayersManager.getPlayer(data.playerId);
         if (!player) {
@@ -65,6 +69,7 @@ export const registerRoomEvents = (io, socket) => {
         }
 
         player = RoomsManager.players.add(data.roomId, player);
+        socketToPlayerId[socket.id] = data.playerId;
         socket.join(data.roomId);
         // TODO remove sending whole room object with imposter
         socket.emit("room:joined", {roomId: data.roomId, room, player, started: room.started});
@@ -104,6 +109,10 @@ export const registerRoomEvents = (io, socket) => {
             return;
         }
         console.log("Room data for game start:", room);
+        if (room.started || room.host.id !== socket.data.playerId) {
+            socket.emit('game:notif', { message: 'Chỉ host được bắt đầu phòng chưa chơi.' });
+            return;
+        }
         if (Object.values(room.players).length <= 1) {
             console.error("Not enough players in room, cannot start game:", data.roomId);
             socket.emit('game:notif', {message: "Need at least 2 players to start the game"});

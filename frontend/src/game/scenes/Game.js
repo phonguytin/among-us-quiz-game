@@ -6,6 +6,8 @@ import {EventBus} from "../EventBus.js";
 import { handleImposter, handleImposterMovement } from "../utils/imposter.js";
 import { setupVisionSystem, disableVisionSystem, updateVisionSystem, enableVisionSystem} from "../utils/vision.js";
 import { TaskController } from '../utils/TaskController.js';
+import { applyActionState, requestAction, secondsRemaining } from '../utils/actionState.js';
+import { EMERGENCY_POSITION, EMERGENCY_RANGE } from '../../../../shared/gameRules.mjs';
 
 export class Game extends BaseGameScene {
 
@@ -41,21 +43,35 @@ export class Game extends BaseGameScene {
     }
 
     setupMeetingZone() {
-        this.meetingZone = this.physics.add.sprite(530, 100);
-        if (this.meetingZone.body) {
-            this.meetingZone.body.setCircle(50);
-            this.meetingZone.body.setAllowGravity(false);
-            this.meetingZone.visible = false;
-        }
         this.meetingBtn = this.add.image(220, 410, 'meeting')
             .setScale(0.7)
             .setDepth(1000)
             .setScrollFactor(0)
+            .setVisible(false)
             .setInteractive()
             .on('pointerdown', () => {
                 this.startMeeting();
             });
         this.ui.add(this.meetingBtn);
+        this.meetingLabel = this.add.text(220, 470, '', {
+            fontFamily: 'Arial', fontSize: '18px', color: '#ffffff', backgroundColor: '#000000', padding: { x: 8, y: 4 },
+        }).setOrigin(0.5).setScrollFactor(0).setVisible(false);
+        this.ui.add(this.meetingLabel);
+    }
+
+    updateMeetingButton() {
+        if (!this.meetingBtn) return;
+        const visible = Boolean(this.player?.active && this.player.alive && !this.meetingActive && !this.taskActive
+            && Math.hypot(this.player.x - EMERGENCY_POSITION.x, this.player.y - EMERGENCY_POSITION.y) <= EMERGENCY_RANGE);
+        this.meetingBtn.setVisible(visible);
+        this.meetingLabel.setVisible(visible);
+        const seconds = this.actionState ? secondsRemaining(this.actionState.emergencyReadyAt) : null;
+        const used = this.actionState?.emergencyUsed;
+        const available = visible && seconds === 0 && !used && !this.actionPending;
+        if (available) this.meetingBtn.resetPipeline();
+        else this.meetingBtn.setPipeline('GrayScale');
+        this.meetingBtn.setAlpha(available ? 1 : 0.55);
+        this.meetingLabel.setText(used ? 'Đã dùng 1/1' : seconds === null ? 'Đang đồng bộ…' : seconds > 0 ? `${seconds}s` : 'Gọi họp · 1 lượt');
     }
 
     // ====== PHASER LIFECYCLE METHODS ======
@@ -78,6 +94,8 @@ export class Game extends BaseGameScene {
         // stored promise for imposter role assignment
         const prom1 = this.createCommon();
         this.meetingActive = false;
+        this.actionState = null;
+        this.actionPending = false;
         this.taskController = new TaskController(this);
         this.socket = socketService.getSocket();
         this.input.on('pointerdown', (pointer) => {
@@ -107,7 +125,7 @@ export class Game extends BaseGameScene {
             handleImposter(this);
             setupVisionSystem(this);
             this.setupMeetingZone();
-            this.isInMeetingZone = false;
+            this.socket.emit('game:actions:get', { roomId: this.room.id });
         });
     }
 
@@ -128,16 +146,7 @@ export class Game extends BaseGameScene {
             updateVisionSystem(this);
         }
 
-        if (this.meetingZone && !this.meetingActive && !this.taskActive && this.player.active && this.player.alive
-            && this.physics.overlap(this.player, this.meetingZone)) {
-            if (!this.isInMeetingZone) {
-                this.isInMeetingZone = true;
-                this.meetingBtn.visible = true;
-            }
-        } else if (this.isInMeetingZone) {
-            this.isInMeetingZone = false;
-            this.meetingBtn.visible = false;
-        }
+        this.updateMeetingButton();
     }
 
     /**
@@ -147,6 +156,7 @@ export class Game extends BaseGameScene {
         this.taskController?.destroy();
         this.taskController = null;
         if (this.socket) {
+            if (this.onActionState) this.socket.off('game:actions', this.onActionState);
             if (this.onPlayerKilled) {
                 this.socket.off('player:killed', this.onPlayerKilled);
                 this.onPlayerKilled = null;
@@ -221,6 +231,7 @@ export class Game extends BaseGameScene {
                 killedPlayer.alive = false;
                 if (killedPlayer.destroy) killedPlayer.destroy();
             }
+            delete this.players[targetId];
             this.taskController.update(true);
 
             const deathAnim = this.add.sprite(data.x, data.y, 'death', 'Dead0001')
@@ -261,6 +272,13 @@ export class Game extends BaseGameScene {
         this.onMeetingEnded = (data) => {
             console.log("Meeting ended event received:", data);
             this.meetingActive = false;
+            const ejectedId = data.results?.ejectedId;
+            if (ejectedId) {
+                if (this.room.players[ejectedId]) this.room.players[ejectedId].isAlive = false;
+                const ejected = ejectedId === this.playerObj.id ? this.player : this.players[ejectedId];
+                if (ejected) { ejected.alive = false; ejected.destroy(); }
+                delete this.players[ejectedId];
+            }
             this.physics.resume();
             enableVisionSystem(this);
             this.teleportPlayersToSpawn();
@@ -283,6 +301,8 @@ export class Game extends BaseGameScene {
         this.socket.on('meeting:started', this.onMeetingStarted);
         this.socket.on('meeting:ended', this.onMeetingEnded);
         this.socket.on('game:ended', this.onGameEnd);
+        this.onActionState = state => applyActionState(this, state);
+        this.socket.on('game:actions', this.onActionState);
     }
 
     // MEETING MECHANICS
@@ -292,9 +312,11 @@ export class Game extends BaseGameScene {
     startMeeting() {
         if (this.taskActive || this.meetingActive || !this.player?.alive) return;
         if (!this.socket || !this.playerObj || !this.room) return;
+        if (!this.actionState || this.actionState.emergencyUsed || secondsRemaining(this.actionState.emergencyReadyAt)
+            || Math.hypot(this.player.x - EMERGENCY_POSITION.x, this.player.y - EMERGENCY_POSITION.y) > EMERGENCY_RANGE) return;
 
         console.log('Starting meeting...');
-        this.socket.emit('meeting:start', {
+        requestAction(this, 'meeting:start', {
             roomId: this.room.id,
             callerId: this.playerObj.id
         });

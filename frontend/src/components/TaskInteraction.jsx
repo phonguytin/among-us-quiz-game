@@ -16,7 +16,7 @@ export default function TaskInteraction() {
   useEffect(() => {
     const open = data => { setTask(data); setReportMessage(''); };
     const reset = () => { setTask(null); setNearby({ task: null, body: null }); };
-    const report = () => setReportMessage('Report thành công. Xem console (F12).');
+    const report = () => setReportMessage('Đã báo cáo xác và mở cuộc họp.');
     EventBus.on('interaction:nearby', setNearby);
     EventBus.on('task:opened', open);
     EventBus.on('interaction:reset', reset);
@@ -47,6 +47,11 @@ export default function TaskInteraction() {
       </button>}
     </div>}
     {reportMessage && <p className={styles.reportMessage} role="status">{reportMessage}</p>}
-    {task && <TaskPanel key={`${task.roomId}:${task.id}`} task={task} service={questionService} onClose={close} />}
+    {task && <TaskPanel key={`${task.roomId}:${task.id}`} task={task} service={questionService} onClose={close}
+      onComplete={() => {
+        EventBus.emit('task:complete', task.id);
+        setTask(null);
+        setReportMessage('Đã hoàn thành nhiệm vụ!');
+      }} />}
   </>;
 }
