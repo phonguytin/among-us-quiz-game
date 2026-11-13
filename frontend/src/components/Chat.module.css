@@ -1,0 +1,313 @@
+/* ===== Nút bật chat ===== */
+.toggle {
+    position: fixed;
+    top: 64px;
+    right: 20px;
+    z-index: 10002;
+    width: 60px;
+    height: 60px;
+    display: grid;
+    place-items: center;
+    border: 3px solid #e8edf5;
+    border-radius: 16px;
+    background: #24324a;
+    color: #e8edf5;
+    cursor: pointer;
+    box-shadow: 0 6px 0 #111a28, 0 10px 24px #0008;
+    transition: transform 0.08s ease, background 0.15s ease;
+}
+
+.toggle:hover {
+    background: #2e4060;
+}
+
+.toggle:active {
+    transform: translateY(3px);
+    box-shadow: 0 3px 0 #111a28, 0 6px 16px #0008;
+}
+
+.toggleActive {
+    background: #ffcf5a;
+    color: #1b2433;
+    border-color: #fff4d1;
+}
+
+.toggleActive:hover {
+    background: #ffd977;
+}
+
+.badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 6px;
+    border: 2px solid #fff;
+    border-radius: 12px;
+    background: #e94560;
+    color: #fff;
+    font: 700 13px/20px Arial, sans-serif;
+}
+
+/* ===== Khung chat lớn ===== */
+.backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 10001;
+    display: grid;
+    place-items: center;
+    padding: 24px 96px 24px 24px;
+    background: #050a14a6;
+    animation: fadeIn 0.12s ease-out;
+}
+
+.window {
+    width: min(880px, 100%);
+    height: min(720px, 100%);
+    display: flex;
+    flex-direction: column;
+    border: 4px solid #e8edf5;
+    border-radius: 22px;
+    background: linear-gradient(180deg, #1d2a40 0%, #141e30 100%);
+    box-shadow: 0 0 0 4px #0d1422, 0 24px 60px #000c;
+    font-family: Arial, Helvetica, sans-serif;
+    color: #1b2433;
+    overflow: hidden;
+    animation: popIn 0.16s ease-out;
+}
+
+.ghost {
+    background: linear-gradient(180deg, #2a2340 0%, #1a1530 100%);
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px 10px 24px;
+}
+
+.title {
+    color: #e8edf5;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+}
+
+.close {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #e8edf5;
+    border-radius: 12px;
+    background: #e94560;
+    color: #fff;
+    font-size: 18px;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+.close:hover {
+    background: #ff5d77;
+}
+
+/* ===== Danh sách tin nhắn ===== */
+.list {
+    flex: 1;
+    overflow-y: auto;
+    margin: 0 14px;
+    padding: 12px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    border-radius: 14px;
+    background: #0d1422;
+    box-shadow: inset 0 2px 10px #0009;
+}
+
+.list::-webkit-scrollbar {
+    width: 10px;
+}
+
+.list::-webkit-scrollbar-thumb {
+    border-radius: 5px;
+    background: #3a4a66;
+}
+
+.empty {
+    margin: auto;
+    color: #7c8aa5;
+    font-size: 16px;
+}
+
+.card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    width: 86%;
+    padding: 12px 18px;
+    border-radius: 14px;
+    background: #f3f6fb;
+    box-shadow: 0 4px 0 #b9c3d4;
+    animation: slideIn 0.14s ease-out;
+}
+
+.mine {
+    align-self: flex-end;
+    flex-direction: row-reverse;
+    text-align: right;
+    background: #fff4d1;
+    box-shadow: 0 4px 0 #d9c48b;
+}
+
+.dead {
+    background: #ddd7ee;
+    box-shadow: 0 4px 0 #a99fc4;
+}
+
+.dead .text {
+    font-style: italic;
+}
+
+.avatar {
+    position: relative;
+    flex: none;
+    width: 64px;
+    height: 64px;
+    display: grid;
+    place-items: center;
+}
+
+.avatar img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 0 #0004);
+    user-select: none;
+}
+
+.mine .avatar img {
+    transform: scaleX(-1); /* quay mặt vào trong khung */
+}
+
+.avatarFallback {
+    width: 44px;
+    height: 44px;
+    border: 3px solid #1b2433;
+    border-radius: 50%;
+}
+
+.avatarDead img {
+    opacity: 0.5;
+    filter: grayscale(0.4);
+}
+
+.ghostMark {
+    position: absolute;
+    right: -4px;
+    bottom: -4px;
+    font-size: 20px;
+}
+
+.body {
+    min-width: 0;
+    flex: 1;
+}
+
+.name {
+    font-size: 18px;
+    font-weight: 800;
+    color: #24324a;
+    margin-bottom: 4px;
+}
+
+.text {
+    font-size: 19px;
+    line-height: 1.35;
+    color: #1b2433;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+/* ===== Ô nhập ===== */
+.form {
+    padding: 6px 14px 16px;
+}
+
+.meta {
+    display: flex;
+    justify-content: space-between;
+    min-height: 22px;
+    padding: 0 6px;
+    font-size: 14px;
+}
+
+.error {
+    color: #ff9aa8;
+}
+
+.counter {
+    color: #9fb0cc;
+}
+
+.inputRow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 6px 6px 18px;
+    border: 3px solid #e8edf5;
+    border-radius: 14px;
+    background: #f3f6fb;
+}
+
+.input {
+    flex: 1;
+    min-width: 0;
+    height: 48px;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: #1b2433;
+    font-size: 19px;
+}
+
+.send {
+    flex: none;
+    width: 52px;
+    height: 48px;
+    display: grid;
+    place-items: center;
+    border: none;
+    border-radius: 10px;
+    background: #2f80ed;
+    color: #fff;
+    cursor: pointer;
+}
+
+.send:hover:not(:disabled) {
+    background: #4a94ff;
+}
+
+.send:disabled {
+    background: #b9c3d4;
+    cursor: default;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+}
+
+@keyframes popIn {
+    from { opacity: 0; transform: scale(0.96); }
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateY(6px); }
+}
+
+@media (max-width: 640px) {
+    .backdrop { padding: 88px 12px 12px; }
+    .card { width: 100%; }
+    .avatar { width: 48px; height: 48px; }
+    .text { font-size: 16px; }
+}

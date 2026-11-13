@@ -263,6 +263,15 @@ export const registerGameEvents = (io, socket) => {
 
         room.deadBodies = {};
 
+        // Người bị loại cũng vào room spectator để thấy chat của người đã chết
+        const ejectedId = data.results.ejectedId;
+        if (ejectedId) {
+            for (const s of io.sockets.sockets.values()) {
+                if (s.data.playerId === ejectedId && s.rooms.has(data.roomId))
+                    s.join(spectatorRoomOf(data.roomId));
+            }
+        }
+
         io.to(data.roomId).emit("meeting:ended", data);
 
         // Check win condition after meeting

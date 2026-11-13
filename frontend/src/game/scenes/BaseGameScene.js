@@ -383,6 +383,9 @@ export class BaseGameScene extends Scene {
         this.createKillAnimations();
         this.setupMap();
         this.setupInput();
+        // Khi focus ô chat, phím đang giữ sẽ không nhận được keyup -> reset để nhân vật không tự đi
+        this._onChatFocus = () => this.input.keyboard?.resetKeys();
+        EventBus.on("chat:focus", this._onChatFocus);
         this.setupSocketListeners();
         await this.fetchAndSetupPlayers();
         console.log("Finished Setting Up Players: ", this.player);
@@ -775,6 +778,7 @@ export class BaseGameScene extends Scene {
     }
 
     shutdown() {
+        if (this._onChatFocus) EventBus.off("chat:focus", this._onChatFocus);
         this.cleanupSocketListeners();
     }
 }

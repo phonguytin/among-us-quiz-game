@@ -8,12 +8,15 @@ import { TasksManager } from "../managers/tasks.manager.js";
  * @typedef {{hostId: string, roomId: string, questions?: unknown}} RoomCreateData
  * @typedef {{playerId: string, roomId: string}} RoomJoinData
  * @typedef {{roomId: string}} GameStartData
- * @typedef {{roomId: string, playerId: string, message: string}} SendMessageData
+ * @typedef {{roomId: string, message: string}} SendMessageData
  */
 
 // Track socket to player mapping for cleanup on disconnect
 /** @type {{[socketId: string]: string}} */
 const socketToPlayerId = {};
+
+const CHAT_MAX_LENGTH = 200; // phải khớp với MAX_LENGTH ở frontend/src/components/Chat.jsx
+const CHAT_COOLDOWN_MS = 500;
 
 /**
  * @param {import('socket.io').Server} io
@@ -240,14 +243,54 @@ export const registerRoomEvents = (io, socket) => {
 
     /**
      * @param {SendMessageData} data
+     * @param {(response: {ok: boolean, message?: string}) => void} [ack]
      * @returns {void}
      */
-    const sendMessage = (data) => {
-        console.log("Send message received:", data);
-        io.to(data.roomId).emit("room:message", {
-            playerId: data.playerId,
-            message: data.message,
-        });
+    const sendMessage = (data, ack) => {
+        const reply = typeof ack === "function" ? ack : () => {};
+        const reject = (message = "") => reply({ ok: false, message });
+
+        const roomId = typeof data?.roomId === "string" ? data.roomId : "";
+        const playerId = socket.data.playerId;
+        const room = RoomsManager.fetchRoom(roomId);
+        const player = room?.players[playerId];
+        if (!room || !player || !socket.rooms.has(roomId))
+            return reject("Bạn không ở trong phòng này.");
+
+        const text =
+            typeof data.message === "string"
+                ? data.message.replace(/\s+/g, " ").trim()
+                : "";
+        if (!text) return reject("Tin nhắn trống.");
+        if (text.length > CHAT_MAX_LENGTH)
+            return reject(`Tin nhắn tối đa ${CHAT_MAX_LENGTH} ký tự.`);
+
+        const now = Date.now();
+        if (now - (socket.data.lastChatAt ?? 0) < CHAT_COOLDOWN_MS)
+            return reject("Bạn gửi quá nhanh.");
+
+        const isDead = room.started && player.isAlive === false;
+        const inMeeting = !!room.currentMeeting?.isActive;
+        // Trong ván: người sống chỉ chat khi đang họp; người chết chỉ chat với người chết
+        if (room.started && !isDead && !inMeeting)
+            return reject("Chỉ có thể chat trong cuộc họp.");
+
+        socket.data.lastChatAt = now;
+        const payload = {
+            id: `${now}-${Math.random().toString(36).slice(2, 8)}`,
+            roomId,
+            playerId,
+            name: player.name,
+            color: player.color,
+            message: text,
+            dead: isDead,
+            ts: now,
+        };
+        io.to(isDead ? `${roomId}:spectators` : roomId).emit(
+            "room:message",
+            payload,
+        );
+        reply({ ok: true });
     };
 
     /**

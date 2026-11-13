@@ -10,6 +10,7 @@ import { EventBus } from "./game/EventBus";
 import RoleIndicator from "./components/RoleIndicator.jsx";
 import { ToastContainer } from "./components/Toast.jsx";
 import QuizTasks from "./components/QuizTasks.jsx";
+import Chat from "./components/Chat.jsx";
 
 const PAGES = {
   MENU: "lobby",
@@ -262,6 +263,14 @@ function App() {
             Leave
           </button>
           <div className={styles.roomTag}>Room: {roomId}</div>
+
+          <Chat
+            socket={socket}
+            roomId={roomId}
+            playerId={playerIdRef.current}
+            started={currentPage === PAGES.GAME}
+            meetingActive={meetingActive}
+          />
 
           {meetingActive && meetingData && (
             <Meeting
